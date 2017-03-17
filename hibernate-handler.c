@@ -9,6 +9,7 @@
 #include <sys/utsname.h>
 #include <syslog.h>
 #include <string.h>
+#include <errno.h>
 
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define finit_module(fd, uargs, flags) syscall(__NR_finit_module, fd, uargs, flags)
@@ -29,13 +30,13 @@ int main(void) {
 
 	//Remove driver
     if (delete_module("ven_rsi_sdio", O_NONBLOCK) != 0) {
-        syslog (LOG_ERR, "Remove ven_rsi_sdio fail\n");
-        perror("delete_module failed(ven_rsi_sdio)");
+        syslog (LOG_ERR, "Remove driver ven_rsi_sdio module failed\n");
+        perror("delete_module failed (ven_rsi_sdio)");
     }
 
     if (delete_module("ven_rsi_91x", O_NONBLOCK) != 0) {
-        syslog (LOG_ERR, "Remove ven_rsi_91x fail\n");
-        perror("delete_module failed(ven_rsi_91x)");
+        syslog (LOG_ERR, "Remove driver ven_rsi_91x module failed\n");
+        perror("delete_module failed (ven_rsi_91x)");
     }
 
     uname(&utsname);
@@ -44,8 +45,7 @@ int main(void) {
     fd_sdio = open(rsi_sdio_ko, O_RDONLY);
     if (fd_sdio < 0)
     {
-        syslog (LOG_ERR, "Open driver failed:%s\n", rsi_sdio_ko);
-        perror("Open ven_rsi_sdio failed\n");
+        syslog (LOG_ERR, "Open ven_rsi_sdio failed, errno:%d\n", errno);
         ret = EXIT_FAILURE;
         goto out;
     }
@@ -53,22 +53,21 @@ int main(void) {
     fd_91x = open(rsi_91x_ko, O_RDONLY);
     if (fd_91x < 0)
     {
-        syslog (LOG_ERR, "Open driver failed:%s\n", rsi_91x_ko);
-        perror("Open ven_rsi_91x failed\n");
+        syslog (LOG_ERR, "Open ven_rsi_91x failed, errno:%d\n", errno);
         ret = EXIT_FAILURE;
         goto out_close_sdio;
     }
 
     // init_module ven_rsi_91x
     if (finit_module(fd_91x, "", 0) != 0) {
-        perror("init_module image_91x");
+        syslog (LOG_ERR, "Load module ven_rsi_91x failed, errno:%d\n", errno);
         return EXIT_FAILURE;
         goto out_err_close_91x;
     }
 
     // init_module ven_rsi_sdio
     if (finit_module(fd_sdio, "", 0) != 0) {
-        perror("init_module image_sdio");
+        syslog (LOG_ERR, "Load module ven_rsi_sdio failed, errno:%d\n", errno);
         return EXIT_FAILURE;
         goto out_err_close_91x;
     }
