@@ -18,7 +18,7 @@ int main(void) {
     char rsi_sdio_ko[128]={0};
     char rsi_91x_ko[128]={0};
     int fd_sdio, fd_91x;
-	int ret=EXIT_SUCCESS;
+    int ret=EXIT_SUCCESS;
     struct stat st;
 
     setlogmask (LOG_UPTO (LOG_NOTICE));
@@ -27,12 +27,12 @@ int main(void) {
 
 	//Remove driver
     if (delete_module("ven_rsi_sdio", O_NONBLOCK) != 0) {
-		syslog (LOG_ERR, "Remove ven_rsi_sdio fail\n");
+        syslog (LOG_ERR, "Remove ven_rsi_sdio fail\n");
         perror("delete_module failed(ven_rsi_sdio)");
     }
 
     if (delete_module("ven_rsi_91x", O_NONBLOCK) != 0) {
-		syslog (LOG_ERR, "Remove ven_rsi_91x fail\n");
+        syslog (LOG_ERR, "Remove ven_rsi_91x fail\n");
         perror("delete_module failed(ven_rsi_91x)");
     }
 
@@ -42,41 +42,40 @@ int main(void) {
     fd_sdio = open(rsi_sdio_ko, O_RDONLY);
     if (fd_sdio < 0)
     {
-		syslog (LOG_ERR, "Open driver failed:%s\n", rsi_sdio_ko);
-		perror("Open ven_rsi_sdio failed\n");
-		ret = EXIT_FAILURE;
-		goto out;
+        syslog (LOG_ERR, "Open driver failed:%s\n", rsi_sdio_ko);
+        perror("Open ven_rsi_sdio failed\n");
+        ret = EXIT_FAILURE;
+        goto out;
     }
 
-	fd_91x = open(rsi_91x_ko, O_RDONLY);
+    fd_91x = open(rsi_91x_ko, O_RDONLY);
     if (fd_91x < 0)
     {
-		syslog (LOG_ERR, "Open driver failed:%s\n", rsi_91x_ko);
-		perror("Open ven_rsi_91x failed\n");
-		ret = EXIT_FAILURE;
-		goto out_close_sdio;
+        syslog (LOG_ERR, "Open driver failed:%s\n", rsi_91x_ko);
+        perror("Open ven_rsi_91x failed\n");
+        ret = EXIT_FAILURE;
+        goto out_close_sdio;
     }
 
-	// init_module ven_rsi_91x
+    // init_module ven_rsi_91x
     if (finit_module(fd_91x, "", 0) != 0) {
         perror("init_module image_91x");
         return EXIT_FAILURE;
-		goto out_err_close_91x;
+        goto out_err_close_91x;
     }
 
-	// init_module ven_rsi_sdio
+    // init_module ven_rsi_sdio
     if (finit_module(fd_sdio, "", 0) != 0) {
         perror("init_module image_sdio");
         return EXIT_FAILURE;
-		goto out_err_close_91x;
+        goto out_err_close_91x;
     }
 
 out_err_close_91x:
-	close(fd_91x);
+    close(fd_91x);
 out_close_sdio:
-	close(fd_sdio);
+    close(fd_sdio);
 out:
-	closelog();
-	return ret;
-
+    closelog();
+    return ret;
 }
