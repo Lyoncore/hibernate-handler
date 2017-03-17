@@ -15,6 +15,8 @@
 #define finit_module(fd, uargs, flags) syscall(__NR_finit_module, fd, uargs, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
+#define CARACALLA_HANDLER_ENABLE_FILE "/snap/caracalla/current/caracalla-hibernate-handler-enable"
+
 int main(void) {
     struct utsname utsname={0};
     char rsi_sdio_ko[128]={0};
@@ -24,7 +26,12 @@ int main(void) {
     struct stat st;
 
     setlogmask (LOG_UPTO (LOG_NOTICE));
-    openlog ("hibernate-handler", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1); 
+    openlog ("hibernate-handler", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+    if( access( CARACALLA_HANDLER_ENABLE_FILE , F_OK ) == -1 ) {
+        syslog (LOG_INFO, "hibernate-handler is disabled\n");
+        return ret;
+    }
 
 	syslog (LOG_NOTICE, "Redpine-hibernate reload driver start.\n");
 
