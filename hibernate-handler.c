@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/utsname.h>
 #include <syslog.h>
+#include <string.h>
 
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define finit_module(fd, uargs, flags) syscall(__NR_finit_module, fd, uargs, flags)
@@ -37,8 +38,8 @@ int main(void) {
     }
 
     uname(&utsname);
-    sprintf(rsi_sdio_ko,"/lib/modules/%s/kernel/ubuntu/rsi/ven_rsi_sdio.ko",utsname.release);
-    sprintf(rsi_91x_ko,"/lib/modules/%s/kernel/ubuntu/rsi/ven_rsi_91x.ko",utsname.release);
+    snprintf(rsi_sdio_ko, strlen(utsname.release), "/lib/modules/%s/kernel/ubuntu/rsi/ven_rsi_sdio.ko", utsname.release);
+    snprintf(rsi_91x_ko, strlen(utsname.release), "/lib/modules/%s/kernel/ubuntu/rsi/ven_rsi_91x.ko", utsname.release);
     fd_sdio = open(rsi_sdio_ko, O_RDONLY);
     if (fd_sdio < 0)
     {
