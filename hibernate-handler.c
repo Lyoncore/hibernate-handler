@@ -23,7 +23,8 @@ int main(void) {
     struct stat st;
 
     setlogmask (LOG_UPTO (LOG_NOTICE));
-    openlog ("Redpine-hibernate", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1); 
+    openlog ("hibernate-handler", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1); 
+
 	syslog (LOG_NOTICE, "Redpine-hibernate reload driver start.\n");
 
 	//Remove driver
