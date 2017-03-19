@@ -79,7 +79,7 @@ int Reload_redpine_driver(void) {
         goto out_err_close_91x;
     }
 
-	syslog (LOG_NOTICE, "Redpine-hibernate reload driver complete.\n");
+    syslog (LOG_NOTICE, "Redpine-hibernate reload driver complete.\n");
 
 out_err_close_91x:
     close(fd_91x);
