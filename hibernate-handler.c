@@ -26,9 +26,9 @@ int Reload_redpine_driver(void) {
     struct utsname utsname={0};
     int fd_sdio, fd_91x;
 
-	syslog (LOG_NOTICE, "Redpine-hibernate reload driver start.\n");
+    syslog (LOG_NOTICE, "Redpine-hibernate reload driver start.\n");
 
-	//Remove driver
+    //Remove driver
     if (delete_module("ven_rsi_sdio", O_NONBLOCK) != 0) {
         syslog (LOG_ERR, "Remove driver vmodule en_rsi_sdio module failed\n");
         ret = EXIT_FAILURE;
