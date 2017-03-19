@@ -14,7 +14,7 @@
 #define finit_module(fd, uargs, flags) syscall(__NR_finit_module, fd, uargs, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
-#define CARACALLA_HANDLER_ENABLE_FILE "/snap/caracalla/current/caracalla-hibernate-handler-enable"
+#define REDPINED_RELOAD_DISABLE_FILE "redpine_reload_disable" // located at $SNAP_COMMON/redpine_reload_disable
 
 #define BUFFER_SZ 256
 
@@ -79,6 +79,8 @@ int Reload_redpine_driver(void) {
         goto out_err_close_91x;
     }
 
+	syslog (LOG_NOTICE, "Redpine-hibernate reload driver complete.\n");
+
 out_err_close_91x:
     close(fd_91x);
 out_close_sdio:
@@ -90,16 +92,24 @@ out:
 int main(void) {
     int ret=EXIT_SUCCESS;
     struct stat st;
+    char *s, redpine_reload_disable_file[BUFFER_SZ]={0};
 
     setlogmask (LOG_UPTO (LOG_NOTICE));
     openlog ("hibernate-handler", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-    if( access( CARACALLA_HANDLER_ENABLE_FILE , F_OK ) == -1 ) {
-        syslog (LOG_ERR, "hibernate-handler is disabled\n");
+    s = getenv("SNAP_COMMON");
+    if ( s != NULL )
+        snprintf(redpine_reload_disable_file, BUFFER_SZ, "%s/%s", s, REDPINED_RELOAD_DISABLE_FILE);
+    else
+        snprintf(redpine_reload_disable_file, BUFFER_SZ, "%s", REDPINED_RELOAD_DISABLE_FILE);
+        
+    if( access( redpine_reload_disable_file , F_OK ) != -1 ) {
+        syslog (LOG_NOTICE, "Redpine Reload is disabled\n");
         return ret;
     }
-    
-    ret = Reload_redpine_driver();
+    else
+        ret = Reload_redpine_driver();
+
     closelog();
     return ret;
 }
