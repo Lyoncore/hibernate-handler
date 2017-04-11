@@ -10,13 +10,11 @@
 #include <syslog.h>
 #include <string.h>
 #include <errno.h>
+#include "modprobe_file_parse.h"
+#include "hibernate-handler.h"
 
 #define finit_module(fd, uargs, flags) syscall(__NR_finit_module, fd, uargs, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
-
-#define REDPINED_RELOAD_DISABLE_FILE "redpine_reload_disable" // located at $SNAP_COMMON/redpine_reload_disable
-
-#define BUFFER_SZ 256
 
 int Reload_redpine_driver(void) {
     int ret=EXIT_SUCCESS;
@@ -27,8 +25,44 @@ int Reload_redpine_driver(void) {
     char buf[BUFFER_SZ]={0};
     struct utsname utsname={0};
     int fd_sdio, fd_91x, fd_mac80211, fd_cfg80211;
+    char options[BUFFER_SZ]={0};
 
     syslog (LOG_NOTICE, "Redpine-hibernate reload driver start.\n");
+
+    //Parse the /etc/modprobe.d/rs9113.conf
+    ret = parse_config_file(RS9113_CONF, options);
+    if (ret == EXIT_FAILURE)
+    {
+        //the config file cannot be found
+        //use default value of dev_oper_mode=13
+        syslog (LOG_NOTICE, "The ven_rsi_sdio parameter is incorrect, set to default dev_oper_mode=13.\n");
+        snprintf(options, BUFFER_SZ, "%s%s", RS9113_MODE_OPTIONS, RS9113_DEFAULT_MODE);
+    }
+    else {
+        char *ptr;
+        ptr = strstr(options,RS9113_MODE_OPTIONS);
+        if (ptr == NULL)
+        {
+            //the options is invalid which not "dev_oper_mode="
+            //use default value of dev_oper_mode=13
+            syslog (LOG_NOTICE, "The ven_rsi_sdio not found, set to default dev_oper_mode=13.\n");
+            snprintf(options, BUFFER_SZ, "%s%s", RS9113_MODE_OPTIONS, RS9113_DEFAULT_MODE);
+        }
+        else
+        {
+            char *ptr;
+            ptr = strstr(options,"=")+1;
+            if (strncmp(ptr,RS9113_MODE_STA_BT_DUAL,3)!=0 && strncmp(ptr,RS9113_MODE_AP_BT_DUAL,3)!=0 && strncmp(ptr,RS9113_MODE_WIFI_ALONE,3)!=0 &&
+                    strncmp(ptr,RS9113_MODE_BT_ALONE,3)!=0 && strncmp(ptr,RS9113_MODE_BT_LE_ALONE,3)!=0 && strncmp(ptr,RS9113_MODE_AP_BT_CLASSIC,3)!=0 &&
+                    strncmp(ptr,RS9113_MODE_STA_BT_LE,3)!=0 && strncmp(ptr,RS9113_MODE_AP_BT_CLASSIC,3)!=0 )
+            {
+                //the options is set to invalid mode
+                //use default value of dev_oper_mode=13
+                syslog (LOG_NOTICE, "The value of ven_rsi_sdio is incorrect, set to default dev_oper_mode=13. ptr:%s\n",ptr);
+                snprintf(options, BUFFER_SZ, "%s%s", RS9113_MODE_OPTIONS, RS9113_DEFAULT_MODE);
+            }
+        }
+    }
 
     //Remove driver
     if (delete_module("ven_rsi_sdio", O_NONBLOCK) != 0) {
@@ -122,7 +156,7 @@ int Reload_redpine_driver(void) {
     }
 
     // init_module ven_rsi_sdio
-    if (finit_module(fd_sdio, "", 0) != 0) {
+    if (finit_module(fd_sdio, options, 0) != 0) {
         syslog (LOG_ERR, "Load driver module ven_rsi_sdio failed, errno:%d\n", errno);
         perror("Load module ven_rsi_sdio failed");
         return EXIT_FAILURE;
