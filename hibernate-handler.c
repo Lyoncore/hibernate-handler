@@ -10,6 +10,7 @@
 #include <syslog.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 #include "modprobe_file_parse.h"
 #include "hibernate-handler.h"
 
@@ -24,43 +25,26 @@ int Reload_redpine_driver(void) {
     char cfg80211_ko[BUFFER_SZ]={0};
     char buf[BUFFER_SZ]={0};
     struct utsname utsname={0};
-    int fd_sdio, fd_91x, fd_mac80211, fd_cfg80211;
+    int fd_sdio, fd_91x, fd_mac80211, fd_cfg80211, fd;
     char options[BUFFER_SZ]={0};
 
     syslog (LOG_NOTICE, "Redpine-hibernate reload driver start.\n");
 
     //Parse the /etc/modprobe.d/rs9113.conf
-    ret = parse_config_file(RS9113_CONF, options);
-    if (ret == EXIT_FAILURE)
+    fd = open(RS9113_SYSFS_DEV_OPER_MODE, O_RDONLY);
+    if (fd < 0)
     {
-        //the config file cannot be found
-        //use default value of dev_oper_mode=13
-        syslog (LOG_NOTICE, "The ven_rsi_sdio parameter is incorrect, set to default dev_oper_mode=13.\n");
-        snprintf(options, BUFFER_SZ, "%s%s", RS9113_MODE_OPTIONS, RS9113_DEFAULT_MODE);
+        syslog (LOG_ERR, "Read dev_oper_mode from rs9113 failed\n");
+        ret = EXIT_FAILURE;
+        goto out;
     }
-    else {
-        char *ptr;
-        ptr = strstr(options,RS9113_MODE_OPTIONS);
-        if (ptr == NULL)
+    else
+    {
+        char mode[10];
+        if( read(fd, mode, 10) >= 0)
         {
-            //the options is invalid which not "dev_oper_mode="
-            //use default value of dev_oper_mode=13
-            syslog (LOG_NOTICE, "The ven_rsi_sdio not found, set to default dev_oper_mode=13.\n");
-            snprintf(options, BUFFER_SZ, "%s%s", RS9113_MODE_OPTIONS, RS9113_DEFAULT_MODE);
-        }
-        else
-        {
-            char *ptr;
-            ptr = strstr(options,"=")+1;
-            if (strncmp(ptr,RS9113_MODE_STA_BT_DUAL,3)!=0 && strncmp(ptr,RS9113_MODE_AP_BT_DUAL,3)!=0 && strncmp(ptr,RS9113_MODE_WIFI_ALONE,3)!=0 &&
-                    strncmp(ptr,RS9113_MODE_BT_ALONE,3)!=0 && strncmp(ptr,RS9113_MODE_BT_LE_ALONE,3)!=0 && strncmp(ptr,RS9113_MODE_AP_BT_CLASSIC,3)!=0 &&
-                    strncmp(ptr,RS9113_MODE_STA_BT_LE,3)!=0 && strncmp(ptr,RS9113_MODE_AP_BT_CLASSIC,3)!=0 )
-            {
-                //the options is set to invalid mode
-                //use default value of dev_oper_mode=13
-                syslog (LOG_NOTICE, "The value of ven_rsi_sdio is incorrect, set to default dev_oper_mode=13. ptr:%s\n",ptr);
-                snprintf(options, BUFFER_SZ, "%s%s", RS9113_MODE_OPTIONS, RS9113_DEFAULT_MODE);
-            }
+            syslog (LOG_NOTICE, "Last dev_oper_mode set to %s\n", mode);
+            snprintf(options, BUFFER_SZ, "dev_oper_mode=%s",mode);
         }
     }
 

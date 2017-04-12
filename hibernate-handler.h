@@ -3,6 +3,8 @@
 #define RS9113_DRIVER_NAME "ven_rsi_sdio"
 #define RS9113_MODE_OPTIONS "dev_oper_mode="
 
+#define RS9113_SYSFS_DEV_OPER_MODE "/sys/module/ven_rsi_sdio/parameters/dev_oper_mode"
+
 #define BUFFER_SZ 256
 
 /*
