@@ -1,0 +1,35 @@
+The hibernate-handler provides a hook for hibernation resume.
+Now it reloads Redpine driver when hibernate resume.
+The reload driver function can be temporary disabled by touching
+/var/snap/<gadget snap name>/common/redpine_reload_disable.
+
+
+The hibernate-handler works with hibernate-handler.service in hibernate.target.wants.
+The hibernate-handler.service content:
+[Unit]
+Description=hibernate-handler service
+After=hibernate.target
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=/snap/bin/<gadget snap name>.hibernate-handler
+TimeoutSec=0
+StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target hibernate.target
+
+
+
+
+To build hibernate-handler by make.
+Copy the hibernate-handler to gadget snap bin/hibernate-handler.
+And add a plug in snap.yaml:
+
+apps:
+    hibernate-handler:
+        command: bin/hibernate-handler
+        plugs:
+        - kernel-module-control
+
