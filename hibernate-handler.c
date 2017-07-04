@@ -205,18 +205,7 @@ int main(void) {
     setlogmask (LOG_UPTO (LOG_NOTICE));
     openlog ("hibernate-handler", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-    s = getenv("SNAP_COMMON");
-    if ( s != NULL )
-        snprintf(redpine_reload_disable_file, BUFFER_SZ, "%s/%s", s, REDPINED_RELOAD_DISABLE_FILE);
-    else
-        snprintf(redpine_reload_disable_file, BUFFER_SZ, "%s", REDPINED_RELOAD_DISABLE_FILE);
-        
-    if( access( redpine_reload_disable_file , F_OK ) != -1 ) {
-        syslog (LOG_NOTICE, "Redpine Reload is disabled\n");
-        return ret;
-    }
-    else
-        ret = Reload_redpine_driver();
+    syslog (LOG_NOTICE, "hibernate-handler exit\n");
 
     closelog();
     return ret;
